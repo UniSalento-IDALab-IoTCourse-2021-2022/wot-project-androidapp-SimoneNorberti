@@ -8,15 +8,15 @@
 
     <TextView
         android:id="@+id/arrived_data"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="salve"
+        android:layout_width="346dp"
+        android:layout_height="293dp"
+        android:text="@string/salve"
         android:textAlignment="center"
         android:textSize="20sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:layout_editor_absoluteX="8dp"
-        tools:text="salve" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/start_button"

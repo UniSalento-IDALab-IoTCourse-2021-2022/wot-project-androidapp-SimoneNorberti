@@ -4,4 +4,5 @@
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
     <string name="inizia_allenamento">INIZIA ALLENAMENTO</string>
+    <string name="salve">Clicca sul pulsante sopra per iniziare l\'allenamento!</string>
 </resources>

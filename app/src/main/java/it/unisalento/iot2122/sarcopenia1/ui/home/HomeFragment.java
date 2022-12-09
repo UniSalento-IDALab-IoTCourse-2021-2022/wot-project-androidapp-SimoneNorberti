@@ -1,5 +1,6 @@
 package it.unisalento.iot2122.sarcopenia1.ui.home;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -32,7 +33,10 @@ public class HomeFragment extends Fragment {
 
     private FragmentHomeBinding binding;
     public String data;
-    TextView arrivedData;
+    TextView arrivedDataText;
+    Button button;
+    boolean start;
+    MqttClient client = null;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -42,21 +46,37 @@ public class HomeFragment extends Fragment {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        arrivedData = binding.arrivedData;
+        start = true;
+        arrivedDataText = binding.arrivedData;
 
-        Button button = binding.startButton;
+        button = binding.startButton;
         button.setOnClickListener(new View.OnClickListener() {
+            @SuppressLint("SetTextI18n")
             @Override
             public void onClick(View v) {
-                // Intent intent = new Intent(v.getContext(), MqttActivity.class);
-                // startActivity(intent);
-                receiveMqttData();
+
+                if (start){
+                    try {
+                        receiveMqttData(true);
+                    } catch (MqttException e) {
+                        e.printStackTrace();
+                    }
+                    button.setText("FERMA");
+                    start = false;
+                }
+                else {
+                    try {
+                        receiveMqttData(false);
+                    } catch (MqttException e) {
+                        e.printStackTrace();
+                    }
+                    button.setText("INIZIA ALLENAMENTO");
+                    arrivedDataText.setText("Clicca sul pulsante sopra per iniziare l' allenamento!");
+                    start = true;
+                }
+
             }
         });
-
-
-        // arrivedData.setText(data);
-        // homeViewModel.getText().observe(getViewLifecycleOwner(), arrivedData::setText);
         return root;
     }
 
@@ -67,7 +87,8 @@ public class HomeFragment extends Fragment {
         binding = null;
     }
 
-    public void receiveMqttData() {
+
+    public void receiveMqttData(boolean start_flag) throws MqttException {
 
         String broker = "tcp://mqtt.eclipseprojects.io";
         String topicBia = "unisalento/sarcopenia/data/bia";
@@ -77,13 +98,22 @@ public class HomeFragment extends Fragment {
 
         String clientId = MqttClient.generateClientId();
         Log.d("MQTT", "clientId=" + clientId);
-        MqttClient client = null;
+
+        if (!start_flag){
+            assert client != null;
+            client.disconnect();
+            client.close();
+            return;
+        }
 
         try {
             client = new MqttClient(broker, clientId, new MemoryPersistence());
         } catch (MqttException e) {
             e.printStackTrace();
         }
+
+
+
         MqttConnectOptions options = new MqttConnectOptions();
         options.setUserName(username);
         options.setPassword(password.toCharArray());
@@ -99,7 +129,7 @@ public class HomeFragment extends Fragment {
 
             public void messageArrived(String topic, MqttMessage message) {
                 data = new String(message.getPayload());
-                arrivedData.setText(data);
+                arrivedDataText.setText(data);
                 Log.d("MQTT", "topic: " + topic);
                 Log.d("MQTT", "Qos: " + message.getQos());
                 Log.d("MQTT", "message content: " + new String(message.getPayload()));
@@ -113,15 +143,9 @@ public class HomeFragment extends Fragment {
         try {
             client.connect(options);
             Log.d("MQTT CONNECT", "ok");
-        } catch (MqttException e) {
-            Log.d("MQTT CONNECT", "failed");
-            e.printStackTrace();
-        }
-        try {
             client.subscribe(topicBia, qos);
             Log.d("MQTT SUBSCRIBE", "ok");
         } catch (MqttException e) {
-            Log.d("MQTT SUBSCRIBE", "failed");
             e.printStackTrace();
         }
 

@@ -1,7 +1,6 @@
 package it.unisalento.iot2122.sarcopenia1;
 
 import android.os.Bundle;
-import android.util.Log;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -35,13 +34,9 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
         NavigationUI.setupWithNavController(binding.navView, navController);
 
-
-
-
     }
 
-
-
-
+    // Intent intent = new Intent(v.getContext(), MqttActivity.class);
+    // startActivity(intent);
 
 }
