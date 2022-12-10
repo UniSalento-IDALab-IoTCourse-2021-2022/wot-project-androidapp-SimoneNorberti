@@ -8,8 +8,8 @@
 
     <TextView
         android:id="@+id/arrived_data"
-        android:layout_width="346dp"
-        android:layout_height="293dp"
+        android:layout_width="296dp"
+        android:layout_height="95dp"
         android:text="@string/salve"
         android:textAlignment="center"
         android:textSize="20sp"
@@ -30,5 +30,25 @@
         app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <ListView
+        android:id="@+id/listData"
+        android:layout_width="383dp"
+        android:layout_height="200dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/arrived_data"
+        app:layout_constraintVertical_bias="0.508" />
+
+    <TextView
+        android:id="@+id/textViewTest"
+        android:layout_width="292dp"
+        android:layout_height="53dp"
+        android:text="@string/textview"
+        app:layout_constraintBottom_toTopOf="@+id/listData"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/arrived_data" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

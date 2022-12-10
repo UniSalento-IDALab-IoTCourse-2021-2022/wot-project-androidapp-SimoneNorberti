@@ -1,75 +1,86 @@
 package it.unisalento.iot2122.sarcopenia1.ui.home;
 
 import android.annotation.SuppressLint;
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import org.eclipse.paho.android.service.MqttAndroidClient;
-import org.eclipse.paho.client.mqttv3.IMqttActionListener;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.IMqttToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.json.JSONObject;
+
+import java.util.Objects;
 
 import it.unisalento.iot2122.sarcopenia1.MainActivity;
-import it.unisalento.iot2122.sarcopenia1.MqttActivity;
 import it.unisalento.iot2122.sarcopenia1.databinding.FragmentHomeBinding;
 
 public class HomeFragment extends Fragment {
 
     private FragmentHomeBinding binding;
     public String data;
-    TextView arrivedDataText;
-    Button button;
     boolean start;
+    TextView arrivedDataText, textViewTest;
+    Button button;
+    ListView listData;
     MqttClient client = null;
 
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             ViewGroup container, Bundle savedInstanceState) {
-        HomeViewModel homeViewModel =
-                new ViewModelProvider(this).get(HomeViewModel.class);
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+
+        HomeViewModel homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
 
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
         start = true;
         arrivedDataText = binding.arrivedData;
-
+        textViewTest = binding.textViewTest;
         button = binding.startButton;
+
         button.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("SetTextI18n")
             @Override
             public void onClick(View v) {
 
-                if (start){
+                if (start) {
                     try {
                         receiveMqttData(true);
                     } catch (MqttException e) {
                         e.printStackTrace();
                     }
+                    Toast.makeText(getContext(), "Allenamento iniziato!", Toast.LENGTH_SHORT).show();
                     button.setText("FERMA");
+                    arrivedDataText.setText("Provo a ricevere i dati...");
                     start = false;
-                }
-                else {
+                } else {
                     try {
                         receiveMqttData(false);
                     } catch (MqttException e) {
                         e.printStackTrace();
                     }
+                    Toast.makeText(getContext(), "Allenamento terminato!", Toast.LENGTH_SHORT).show();
                     button.setText("INIZIA ALLENAMENTO");
                     arrivedDataText.setText("Clicca sul pulsante sopra per iniziare l' allenamento!");
                     start = true;
@@ -77,6 +88,11 @@ public class HomeFragment extends Fragment {
 
             }
         });
+
+
+        listData = binding.listData;
+
+
         return root;
     }
 
@@ -99,7 +115,7 @@ public class HomeFragment extends Fragment {
         String clientId = MqttClient.generateClientId();
         Log.d("MQTT", "clientId=" + clientId);
 
-        if (!start_flag){
+        if (!start_flag) {
             assert client != null;
             client.disconnect();
             client.close();
@@ -111,8 +127,6 @@ public class HomeFragment extends Fragment {
         } catch (MqttException e) {
             e.printStackTrace();
         }
-
-
 
         MqttConnectOptions options = new MqttConnectOptions();
         options.setUserName(username);
@@ -130,6 +144,9 @@ public class HomeFragment extends Fragment {
             public void messageArrived(String topic, MqttMessage message) {
                 data = new String(message.getPayload());
                 arrivedDataText.setText(data);
+                // TODO send json data with REST API
+                sendAPIData(data);
+
                 Log.d("MQTT", "topic: " + topic);
                 Log.d("MQTT", "Qos: " + message.getQos());
                 Log.d("MQTT", "message content: " + new String(message.getPayload()));
@@ -149,6 +166,33 @@ public class HomeFragment extends Fragment {
             e.printStackTrace();
         }
 
+    }
+
+    @SuppressLint("SetTextI18n")
+    public void sendAPIData(String data) {
+        // Instantiate the RequestQueue.
+        RequestQueue queue = Volley.newRequestQueue(requireContext());
+        String url = "http://10.0.2.2:5000";
+        // String url = "https://catfact.ninja/fact";
+
+        // Request a string response from the provided URL.
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        // Display the first 500 characters of the response string.
+                        textViewTest.setText("Response is: " + response);
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                textViewTest.setText("That didn't work! ");
+                Log.d("REST API", String.valueOf(error));
+            }
+        });
+
+// Add the request to the RequestQueue.
+        queue.add(stringRequest);
     }
 
 
