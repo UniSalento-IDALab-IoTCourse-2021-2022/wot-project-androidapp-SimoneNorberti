@@ -30,7 +30,9 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONStringer;
 
 import java.util.Objects;
 
@@ -141,11 +143,17 @@ public class HomeFragment extends Fragment {
                 Log.d("MQTT", "connectionLost: " + cause.getMessage());
             }
 
-            public void messageArrived(String topic, MqttMessage message) {
+            public void messageArrived(String topic, MqttMessage message){
                 data = new String(message.getPayload());
                 arrivedDataText.setText(data);
+
                 // TODO send json data with REST API
-                sendAPIData(data);
+                try{
+                    JSONObject JSONdata = new JSONObject(data);
+                    sendAPIData(JSONdata);
+                } catch (JSONException e){
+                    Log.d("JSON", "error: " + e);
+                }
 
                 Log.d("MQTT", "topic: " + topic);
                 Log.d("MQTT", "Qos: " + message.getQos());
@@ -169,31 +177,32 @@ public class HomeFragment extends Fragment {
     }
 
     @SuppressLint("SetTextI18n")
-    public void sendAPIData(String data) {
+    public void sendAPIData(JSONObject data) {
         // Instantiate the RequestQueue.
         RequestQueue queue = Volley.newRequestQueue(requireContext());
-        String url = "http://10.0.2.2:5000";
-        // String url = "https://catfact.ninja/fact";
+        String url = "http://10.0.2.2:5000/senddata";   // e.g. "https://catfact.ninja/fact";
 
         // Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
+        JsonObjectRequest postRequest = new JsonObjectRequest(Request.Method.POST, url, data,
+                new Response.Listener<JSONObject>() {
                     @Override
-                    public void onResponse(String response) {
+                    public void onResponse(JSONObject response) {
                         // Display the first 500 characters of the response string.
-                        textViewTest.setText("Response is: " + response);
+                        textViewTest.setText("Dati inviati correttamente tramite REST API");
+                        Log.d("REST API", String.valueOf(response));
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                textViewTest.setText("That didn't work! ");
+                // textViewTest.setText("That didn't work! ");
                 Log.d("REST API", String.valueOf(error));
             }
         });
 
 // Add the request to the RequestQueue.
-        queue.add(stringRequest);
+        queue.add(postRequest);
     }
+
 
 
 }
