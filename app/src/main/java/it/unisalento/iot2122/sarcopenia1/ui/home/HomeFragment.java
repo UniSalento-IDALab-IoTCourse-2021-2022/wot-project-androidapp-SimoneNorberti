@@ -1,6 +1,7 @@
 package it.unisalento.iot2122.sarcopenia1.ui.home;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -34,7 +35,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONStringer;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+
+import org.pmml4s.model.Model;
 
 import it.unisalento.iot2122.sarcopenia1.MainActivity;
 import it.unisalento.iot2122.sarcopenia1.databinding.FragmentHomeBinding;
@@ -48,6 +57,7 @@ public class HomeFragment extends Fragment {
     Button button;
     ListView listData;
     MqttClient client = null;
+    public String ID_USER = "ID958";
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
@@ -56,10 +66,15 @@ public class HomeFragment extends Fragment {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
+
+
         start = true;
         arrivedDataText = binding.arrivedData;
         textViewTest = binding.textViewTest;
         button = binding.startButton;
+
+        String clientId = MqttClient.generateClientId();
+        Log.d("MQTT", "clientId=" + clientId);
 
         button.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("SetTextI18n")
@@ -68,7 +83,7 @@ public class HomeFragment extends Fragment {
 
                 if (start) {
                     try {
-                        receiveMqttData(true);
+                        receiveMqttData(clientId);
                     } catch (MqttException e) {
                         e.printStackTrace();
                     }
@@ -78,10 +93,13 @@ public class HomeFragment extends Fragment {
                     start = false;
                 } else {
                     try {
-                        receiveMqttData(false);
+                        disconnectMqtt(clientId);
                     } catch (MqttException e) {
                         e.printStackTrace();
                     }
+
+                    // TODO invio a REST API info allenamento finito
+
                     Toast.makeText(getContext(), "Allenamento terminato!", Toast.LENGTH_SHORT).show();
                     button.setText("INIZIA ALLENAMENTO");
                     arrivedDataText.setText("Clicca sul pulsante sopra per iniziare l' allenamento!");
@@ -91,6 +109,7 @@ public class HomeFragment extends Fragment {
             }
         });
 
+        receiveAPImodel();
 
         listData = binding.listData;
 
@@ -105,24 +124,19 @@ public class HomeFragment extends Fragment {
         binding = null;
     }
 
+    public void disconnectMqtt(String clientId) throws MqttException {
+        assert client != null;
+        client.disconnect();
+        client.close();
+    }
 
-    public void receiveMqttData(boolean start_flag) throws MqttException {
+    public void receiveMqttData(String clientId) throws MqttException {
 
         String broker = "tcp://mqtt.eclipseprojects.io";
-        String topicBia = "unisalento/sarcopenia/data/bia";
+        String topicBia = "unisalento/sarcopenia/sensorData";
         String username = "user1";
         String password = "pass1";
         int qos = 0;
-
-        String clientId = MqttClient.generateClientId();
-        Log.d("MQTT", "clientId=" + clientId);
-
-        if (!start_flag) {
-            assert client != null;
-            client.disconnect();
-            client.close();
-            return;
-        }
 
         try {
             client = new MqttClient(broker, clientId, new MemoryPersistence());
@@ -147,9 +161,10 @@ public class HomeFragment extends Fragment {
                 data = new String(message.getPayload());
                 arrivedDataText.setText(data);
 
-                // TODO send json data with REST API
+                // send JSON sensor data + ID user (REST API)
                 try{
                     JSONObject JSONdata = new JSONObject(data);
+                    JSONdata.put("ID_user", ID_USER);
                     sendAPIData(JSONdata);
                 } catch (JSONException e){
                     Log.d("JSON", "error: " + e);
@@ -199,7 +214,41 @@ public class HomeFragment extends Fragment {
             }
         });
 
-// Add the request to the RequestQueue.
+        // Add the request to the RequestQueue.
+        queue.add(postRequest);
+    }
+
+    public void receiveAPImodel(){
+        // Instantiate the RequestQueue.
+        RequestQueue queue = Volley.newRequestQueue(requireContext());
+        String url = "http://10.0.2.2:5000/receivemodel";
+
+        // Request a string response from the provided URL.
+        StringRequest postRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        FileOutputStream outputStream;
+                        try {
+                            // data saved to /data/data/it.unisalento.iot2122.sarcopenia1/files/model.pmml
+                            Log.d("REST API", "ML Model Received");
+                            outputStream = requireContext().openFileOutput("model.pmml", Context.MODE_PRIVATE);
+                            outputStream.write(response.getBytes(StandardCharsets.UTF_8));
+                            outputStream.close();
+                            Toast.makeText(getContext(), "File Saved", Toast.LENGTH_LONG).show();
+                        } catch (IOException e) {
+                            Log.d("FILE", "Error when saving the file");
+                        }
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // textViewTest.setText("That didn't work! ");
+                Log.d("REST API", String.valueOf(error));
+            }
+        });
+
+        // Add the request to the RequestQueue.
         queue.add(postRequest);
     }
 
