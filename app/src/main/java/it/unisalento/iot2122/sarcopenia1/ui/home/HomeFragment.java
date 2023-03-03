@@ -1,5 +1,6 @@
 package it.unisalento.iot2122.sarcopenia1.ui.home;
 
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
@@ -33,20 +34,13 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONStringer;
 
-import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 
-import org.pmml4s.model.Model;
-
-import it.unisalento.iot2122.sarcopenia1.MainActivity;
 import it.unisalento.iot2122.sarcopenia1.databinding.FragmentHomeBinding;
+
 
 public class HomeFragment extends Fragment {
 
@@ -57,7 +51,7 @@ public class HomeFragment extends Fragment {
     Button button;
     ListView listData;
     MqttClient client = null;
-    public String ID_USER = "ID958";
+    public String ID = "ID958";
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
@@ -66,7 +60,7 @@ public class HomeFragment extends Fragment {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-
+        // receiveAPImodel(); //receive the pre-trained model
 
         start = true;
         arrivedDataText = binding.arrivedData;
@@ -83,10 +77,20 @@ public class HomeFragment extends Fragment {
 
                 if (start) {
                     try {
-                        receiveMqttData(clientId);
+                        receiveMqttData(clientId); // TODO normal behavior
+                        JSONObject prova = new JSONObject();
+                        prova.put("gait_speed", 0.7);
+                        prova.put("grip_strength", 26.2);
+                        prova.put("muscle_mass", 5.9);
+                        Log.d("prova JSON", "--> " + prova.toString());
+                        //do_prediction(prova); // TODO [DEBUG ONLY] --> error with Ljava/lang/ClassValue
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     } catch (MqttException e) {
                         e.printStackTrace();
                     }
+
+
                     Toast.makeText(getContext(), "Allenamento iniziato!", Toast.LENGTH_SHORT).show();
                     button.setText("FERMA");
                     arrivedDataText.setText("Provo a ricevere i dati...");
@@ -109,10 +113,7 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        receiveAPImodel();
-
         listData = binding.listData;
-
 
         return root;
     }
@@ -124,11 +125,6 @@ public class HomeFragment extends Fragment {
         binding = null;
     }
 
-    public void disconnectMqtt(String clientId) throws MqttException {
-        assert client != null;
-        client.disconnect();
-        client.close();
-    }
 
     public void receiveMqttData(String clientId) throws MqttException {
 
@@ -164,14 +160,16 @@ public class HomeFragment extends Fragment {
                 // send JSON sensor data + ID user (REST API)
                 try{
                     JSONObject JSONdata = new JSONObject(data);
-                    JSONdata.put("ID_user", ID_USER);
+                    // do_prediction(JSONdata); //TODO normal behavior
+                    JSONdata.put("ID", ID);
                     sendAPIData(JSONdata);
                 } catch (JSONException e){
                     Log.d("JSON", "error: " + e);
                 }
 
-                Log.d("MQTT", "topic: " + topic);
-                Log.d("MQTT", "Qos: " + message.getQos());
+
+                // Log.d("MQTT", "topic: " + topic);
+                // Log.d("MQTT", "Qos: " + message.getQos());
                 Log.d("MQTT", "message content: " + new String(message.getPayload()));
             }
 
@@ -189,6 +187,12 @@ public class HomeFragment extends Fragment {
             e.printStackTrace();
         }
 
+    }
+
+    public void disconnectMqtt(String clientId) throws MqttException {
+        assert client != null;
+        client.disconnect();
+        client.close();
     }
 
     @SuppressLint("SetTextI18n")
@@ -226,6 +230,7 @@ public class HomeFragment extends Fragment {
         // Request a string response from the provided URL.
         StringRequest postRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
+                    @SuppressLint("WorldReadableFiles")
                     @Override
                     public void onResponse(String response) {
                         FileOutputStream outputStream;
@@ -236,6 +241,7 @@ public class HomeFragment extends Fragment {
                             outputStream.write(response.getBytes(StandardCharsets.UTF_8));
                             outputStream.close();
                             Toast.makeText(getContext(), "File Saved", Toast.LENGTH_LONG).show();
+
                         } catch (IOException e) {
                             Log.d("FILE", "Error when saving the file");
                         }

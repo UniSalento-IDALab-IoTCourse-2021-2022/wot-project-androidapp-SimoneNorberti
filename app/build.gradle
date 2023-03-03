@@ -22,16 +22,13 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_1_8 // era 1_9
+        targetCompatibility JavaVersion.VERSION_1_8 // era 1_9
     }
     buildFeatures {
         viewBinding true
     }
 }
-
-
-
 
 
 dependencies {
@@ -43,9 +40,18 @@ dependencies {
     }
     //implementation 'androidx.legacy:legacy-support-v4:1.0.0'
 
-    implementation 'org.pmml4s:pmml4s_2.12:0.9.16'
+    //implementation 'com.microsoft.onnxruntime:onnxruntime:1.13.1'
+    //implementation 'org.pmml4s:pmml4s_2.12:0.9.16'
+    // implementation group: 'org.jpmml', name: 'jpmml-evaluator-spark', version: '1.0.0'
+    // implementation 'org.jpmml:pmml-evaluator:1.6.4'
+    // implementation 'org.jpmml:pmml-maven-plugin:1.0'
 
     implementation 'com.android.volley:volley:1.2.1'
+
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.8.9'
+
+    implementation 'org.scala-lang:scala-library:2.12.11'
+    // implementation 'scala.xml'
 
     implementation 'androidx.appcompat:appcompat:1.5.0'
     implementation 'com.google.android.material:material:1.6.1'
