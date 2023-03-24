@@ -51,7 +51,7 @@ public class HomeFragment extends Fragment {
     Button button;
     ListView listData;
     MqttClient client = null;
-    public String ID = "ID958";
+    public String ID = "ID001";
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
@@ -77,33 +77,32 @@ public class HomeFragment extends Fragment {
 
                 if (start) {
                     try {
-                        receiveMqttData(clientId); // TODO normal behavior
-                        JSONObject prova = new JSONObject();
-                        prova.put("gait_speed", 0.7);
-                        prova.put("grip_strength", 26.2);
-                        prova.put("muscle_mass", 5.9);
-                        Log.d("prova JSON", "--> " + prova.toString());
-                        //do_prediction(prova); // TODO [DEBUG ONLY] --> error with Ljava/lang/ClassValue
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    } catch (MqttException e) {
+                        // TODO inizio allenamento
+                        receiveMqttData(clientId); // + send API
+                    } catch (MqttException e) { // | JSONException
                         e.printStackTrace();
                     }
-
-
                     Toast.makeText(getContext(), "Allenamento iniziato!", Toast.LENGTH_SHORT).show();
                     button.setText("FERMA");
                     arrivedDataText.setText("Provo a ricevere i dati...");
                     start = false;
                 } else {
+                    // TODO ALLENAMENTO FINITO
                     try {
                         disconnectMqtt(clientId);
                     } catch (MqttException e) {
                         e.printStackTrace();
                     }
 
-                    // TODO invio a REST API info allenamento finito
-
+                    JSONObject endData = new JSONObject();
+                    try {
+                        endData.put("ID", ID);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    String url = "http://10.0.2.2:5000/api/endsession";   // e.g. "https://catfact.ninja/fact";
+                    sendAPIData(endData, url);
+                    Log.d("INVIO ENDDATA", "invio POST /api/endsession");
                     Toast.makeText(getContext(), "Allenamento terminato!", Toast.LENGTH_SHORT).show();
                     button.setText("INIZIA ALLENAMENTO");
                     arrivedDataText.setText("Clicca sul pulsante sopra per iniziare l' allenamento!");
@@ -157,12 +156,13 @@ public class HomeFragment extends Fragment {
                 data = new String(message.getPayload());
                 arrivedDataText.setText(data);
 
+                //TODO - normal behavior
                 // send JSON sensor data + ID user (REST API)
                 try{
                     JSONObject JSONdata = new JSONObject(data);
-                    // do_prediction(JSONdata); //TODO normal behavior
                     JSONdata.put("ID", ID);
-                    sendAPIData(JSONdata);
+                    String url = "http://10.0.2.2:5000/api/senddata";   // e.g. "https://catfact.ninja/fact";
+                    sendAPIData(JSONdata, url);
                 } catch (JSONException e){
                     Log.d("JSON", "error: " + e);
                 }
@@ -196,11 +196,9 @@ public class HomeFragment extends Fragment {
     }
 
     @SuppressLint("SetTextI18n")
-    public void sendAPIData(JSONObject data) {
+    public void sendAPIData(JSONObject data , String url) {
         // Instantiate the RequestQueue.
         RequestQueue queue = Volley.newRequestQueue(requireContext());
-        String url = "http://10.0.2.2:5000/senddata";   // e.g. "https://catfact.ninja/fact";
-
         // Request a string response from the provided URL.
         JsonObjectRequest postRequest = new JsonObjectRequest(Request.Method.POST, url, data,
                 new Response.Listener<JSONObject>() {
@@ -217,11 +215,12 @@ public class HomeFragment extends Fragment {
                 Log.d("REST API", String.valueOf(error));
             }
         });
-
         // Add the request to the RequestQueue.
         queue.add(postRequest);
     }
 
+
+    /*
     public void receiveAPImodel(){
         // Instantiate the RequestQueue.
         RequestQueue queue = Volley.newRequestQueue(requireContext());
@@ -257,6 +256,7 @@ public class HomeFragment extends Fragment {
         // Add the request to the RequestQueue.
         queue.add(postRequest);
     }
+     */
 
 
 
