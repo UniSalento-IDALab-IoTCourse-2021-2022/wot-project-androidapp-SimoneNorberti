@@ -6,4 +6,10 @@
     <string name="inizia_allenamento">INIZIA ALLENAMENTO</string>
     <string name="salve">Clicca sul pulsante sopra per iniziare l\'allenamento!</string>
     <string name="textview">TextView</string>
+    <string name="user_1">User 1</string>
+    <string name="user_2">User 2</string>
+    <string name="user_3">User 3</string>
+    <string name="timertext">timerText</string>
+    <string name="vedi_scheda_di_allenamento">Vedi scheda di allenamento</string>
+    <string name="problemi_con_la_scheda">Problemi con la scheda?</string>
 </resources>

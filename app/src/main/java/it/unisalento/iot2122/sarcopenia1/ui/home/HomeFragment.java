@@ -2,7 +2,6 @@ package it.unisalento.iot2122.sarcopenia1.ui.home;
 
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -10,8 +9,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -22,7 +24,6 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -35,9 +36,8 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import it.unisalento.iot2122.sarcopenia1.databinding.FragmentHomeBinding;
 
@@ -50,6 +50,8 @@ public class HomeFragment extends Fragment {
     TextView arrivedDataText, textViewTest;
     Button button;
     ListView listData;
+    RadioButton u1, u2, u3;
+    RadioGroup radioGroup;
     MqttClient client = null;
     public String ID = "ID001";
 
@@ -66,6 +68,29 @@ public class HomeFragment extends Fragment {
         arrivedDataText = binding.arrivedData;
         textViewTest = binding.textViewTest;
         button = binding.startButton;
+        u1 = binding.radioButton; u1.setChecked(true);
+        u2 = binding.radioButton2;
+        u3 = binding.radioButton3;
+
+        u1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ID = "ID001";
+            }
+        });
+        u2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ID = "ID002";
+            }
+        });
+        u3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ID = "ID003";
+            }
+        });
+
 
         String clientId = MqttClient.generateClientId();
         Log.d("MQTT", "clientId=" + clientId);
@@ -77,9 +102,10 @@ public class HomeFragment extends Fragment {
 
                 if (start) {
                     try {
-                        // TODO inizio allenamento
-                        receiveMqttData(clientId); // + send API
-                    } catch (MqttException e) { // | JSONException
+                        //     [ INIZIO ALLENAMENTO ]
+                        receiveMqttData_sendAPI(clientId); // Ricevo i dati dal simulatore di sensori
+                                                            // e li invia al back-end
+                    } catch (MqttException e) {
                         e.printStackTrace();
                     }
                     Toast.makeText(getContext(), "Allenamento iniziato!", Toast.LENGTH_SHORT).show();
@@ -87,9 +113,9 @@ public class HomeFragment extends Fragment {
                     arrivedDataText.setText("Provo a ricevere i dati...");
                     start = false;
                 } else {
-                    // TODO ALLENAMENTO FINITO
+                    //     [ ALLENAMENTO FINITO ]
                     try {
-                        disconnectMqtt(clientId);
+                        disconnectMqtt(clientId); // Termina connessione al simulatore di sensori
                     } catch (MqttException e) {
                         e.printStackTrace();
                     }
@@ -112,7 +138,7 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        listData = binding.listData;
+        //listData = binding.listData;
 
         return root;
     }
@@ -125,7 +151,7 @@ public class HomeFragment extends Fragment {
     }
 
 
-    public void receiveMqttData(String clientId) throws MqttException {
+    public void receiveMqttData_sendAPI(String clientId) throws MqttException {
 
         String broker = "tcp://mqtt.eclipseprojects.io";
         String topicBia = "unisalento/sarcopenia/sensorData";
@@ -156,7 +182,6 @@ public class HomeFragment extends Fragment {
                 data = new String(message.getPayload());
                 arrivedDataText.setText(data);
 
-                //TODO - normal behavior
                 // send JSON sensor data + ID user (REST API)
                 try{
                     JSONObject JSONdata = new JSONObject(data);
@@ -257,6 +282,7 @@ public class HomeFragment extends Fragment {
         queue.add(postRequest);
     }
      */
+
 
 
 
