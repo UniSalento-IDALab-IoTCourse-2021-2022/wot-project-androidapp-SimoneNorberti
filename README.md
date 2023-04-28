@@ -13,3 +13,4 @@ Front-End (Cloud): https://github.com/UniSalento-IDALab-IoTCourse-2021-2022/wot-
 
 ## App Android per il paziente
 L’app Android viene utilizzata dal paziente durante le sessioni di allenamento.
+Essa riceve dati tramite una MQTT Subscribe e li invia su un Cloud Server tramite REST API.
